@@ -2,14 +2,14 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8"/>
-  <title>BlindPuzzles - formularz</title>
+  <title>BlindPuzzles - Form</title>
 </head>
 <body>
-  <h2>Podaj liczbę półruchów w ciemno</h2>
+  <h2>Podaj liczbę ruchów w ciemno (blind_moves)</h2>
   <form action="/puzzle" method="POST">
-    <label for="blind_moves">Blind moves:</label>
-    <input type="number" name="blind_moves" min="0" required>
-    <button type="submit">Wyślij</button>
+    <label for="bm">Blind moves:</label>
+    <input type="number" name="blind_moves" id="bm" min="0" value="0">
+    <button type="submit">Losuj Puzzle</button>
   </form>
 </body>
 </html>

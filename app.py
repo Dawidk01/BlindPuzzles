@@ -43,6 +43,11 @@ def puzzle():
     # (PuzzleId, Fen, Moves, Rating, RatingDeviation, Popularity, NbPlays, Themes, GameUrl, OpeningTags)
     # Interesuje nas głównie puzzle[1] = fen, puzzle[2] = moves, puzzle[8] = game_url.
     game_url = puzzle[8]  # np. 'https://lichess.org/2clM1WU0/black#54'
+    solution_str = puzzle[2]     # puzzle[2] - sekwencja ruchów "e4e5 f3c3 e5e4 f2f7"
+
+    # Zamień solution_str w tablicę UCI
+    # ["e4e5", "f3c3", "e5e4", "f2f7", ...]
+    solutionMoves = solution_str.split()
 
     # 2) Parsujemy ID partii i numer docelowego półruchu (np. #54)
     #    a) ID partii:
@@ -99,6 +104,7 @@ def puzzle():
         puzzle_fen=puzzle_fen,         # Oryginalna pozycja #target
         blind_moves_list=blind_moves_san,
         game_url=game_url,
+        solutionMoves = solutionMoves,
         halfmove_start=halfmove_start,
         halfmove_target=halfmove_target
     )

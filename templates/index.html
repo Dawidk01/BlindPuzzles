@@ -20,6 +20,21 @@
       border: 1px solid #ccc;
       margin-bottom: 1rem;
     }
+
+    .user-board td {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  text-align: center;
+  vertical-align: middle;
+}
+.dark {
+  background-color: #b58863; /* ciemne pola */
+}
+.light {
+  background-color: #f0d9b5; /* jasne pola */
+}
+
   </style>
 </head>
 <body>
@@ -34,28 +49,29 @@
     <p>{{ fen }}</p>
   </div>-->
 
-  <div id="board" style="width: 400px;"></div>
-
-  <div class="fen-box">
-    <h3>W tej pozycji zagrano: (od #{{ halfmove_start }} do #{{ halfmove_target }} w partii):</h3>
-    <ul>
-      {% for move in blind_moves_list %}
-        <li>{{ move }}</li>
-      {% endfor %}
-    </ul>
-  </div>
-
-  <!-- <div class="fen-box">
-    <h3>Pozycja docelowa puzzla (FEN):</h3>
-    <p>{{ puzzle_fen }}</p>
-  </div> -->
+  <div style="display: flex; gap: 20px;">
+    <!-- Szachownica chessboard.js -->
+    <div>
+      <div id="board" style="width: 400px;"></div>
   
+      <div class="fen-box">
+        <h3>W tej pozycji zagrano: (od #{{ halfmove_start }} do #{{ halfmove_target }}):</h3>
+        <ul>
+          {% for move in blind_moves_list %}
+            <li>{{ move }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  
+    <!-- Druga, pusta szachownica -->
+    <div>
+      <table class="user-board" id="userBoard"></table>
+      <div id="info"></div>
+    </div>
+  </div>  
   <p><a href="/puzzle">Wylosuj kolejny puzzle</a></p>
 
-  <div id="controls">
-    <button id="startBtn">Start Position</button>
-    <button id="clearBtn">Clear Board</button>
-  </div>
 
   <!-- Załaduj jQuery i chessboard.js -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -79,6 +95,104 @@
     $('#clearBtn').on('click', function () {
       board.clear(); // pusta szachownica
     });
+
+
+
+
+    ///////////////////////////////
+    // B) Sekwencja ruchów puzzle (z puzzle[2])
+    ///////////////////////////////
+    // JSON-ujemy je z back-endu
+    var solutionMoves = {{ solutionMoves|tojson }};
+    // Np. ["e4e5","f3c3","e5e4","f2f7"]
+
+    // Pierwszy ruch (solutionMoves[0]) = ruch przeciwnika (już zrobiony w oryg. puzzle).
+    // Zatem user zaczyna od index=1 (jeśli tam jest ruch).
+    var currentIndex = 1;
+
+
+
+
+
+
+    // C) Budowa pustej szachownicy do klikania
+    ///////////////////////////////
+    var userBoardEl = document.getElementById("userBoard");
+    var ranks = [8,7,6,5,4,3,2,1];
+    var files = ['a','b','c','d','e','f','g','h'];
+
+    for (var r = 0; r < 8; r++) {
+      var row = userBoardEl.insertRow();
+      for (var c = 0; c < 8; c++) {
+        var cell = row.insertCell();
+        cell.classList.add(((r + c) % 2 === 0) ? 'dark' : 'light');
+        var sq = files[c] + ranks[r]; // np. "a8"
+        cell.setAttribute('data-square', sq);
+        cell.addEventListener('click', onCellClick);
+      }
+    }
+
+    var firstClick = null;
+    var infoEl = document.getElementById("info");
+
+    function onCellClick(e) {
+      var sq = e.target.getAttribute('data-square');
+      if (!firstClick) {
+        firstClick = sq;
+        infoEl.innerText = "Źródło: " + sq;
+      } else {
+        var secondClick = sq;
+        var userMove = firstClick + secondClick; // np. "g5g6"
+
+        // Sprawdzamy z solutionMoves[currentIndex]
+        if (currentIndex >= solutionMoves.length) {
+          alert("Puzzle już jest ukończone!");
+          resetClicks();
+          return;
+        }
+
+        var expectedMove = solutionMoves[currentIndex];
+        if (userMove === expectedMove) {
+          alert("Poprawny ruch: " + userMove);
+          currentIndex++;
+
+          // Ruch przeciwnika (jeśli jest)
+          // bo puzzle najczęściej przeplata: user, opp, user, opp,...
+          if (currentIndex < solutionMoves.length && (currentIndex % 2 === 0)) {
+            var oppMove = solutionMoves[currentIndex];
+            alert("Ruch przeciwnika: " + oppMove);
+            currentIndex++;
+          }
+
+          // Czy koniec puzzle?
+          if (currentIndex >= solutionMoves.length) {
+            alert("Gratulacje, koniec puzzle!");
+            // Wyświetlamy finalną pozycję
+            board.position('{{ puzzle_fen }}', false);
+          }
+
+        } else {
+          alert("Przegrałeś! Oczekiwano " + expectedMove + ", a wybrałeś " + userMove);
+          disableBoard();
+        }
+
+        resetClicks();
+      }
+    }
+
+    function resetClicks() {
+      firstClick = null;
+      infoEl.innerText = "";
+    }
+
+    function disableBoard() {
+      // Wyłącz obsługę clicków
+      var cells = userBoardEl.getElementsByTagName("td");
+      for (var i=0; i<cells.length; i++) {
+        cells[i].removeEventListener('click', onCellClick);
+      }
+    }
+
   </script>
 </body>
 </html>
