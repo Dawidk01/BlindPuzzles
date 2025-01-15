@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>ChessboardJS Example</title>
+  <!-- Załaduj style Chessboard.js ze static/css -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chessboard-1.0.0.min.css') }}">
+  
+  <!-- Prosty styl, aby ładnie ułożyć przyciski (opcjonalne) -->
+  <style>
+    #controls {
+      margin: 20px 0;
+    }
+    button {
+      margin-right: 10px;
+    }
+    .fen-box {
+      background-color: #f8f8f8;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>BlindPuzzles: Szachownica cofnięta</h1>
+
+  <!-- Link do oryginalnej partii -->
+  <p>Oryginalna partia: <a href="{{ game_url }}" target="_blank">{{ game_url }}</a></p>
+
+  <!-- Informacje o cofniętej pozycji i docelowej pozycji 
+  <div class="fen-box">
+    <h3>Cofnięta pozycja (FEN):</h3>
+    <p>{{ fen }}</p>
+  </div>-->
+
+  <div id="board" style="width: 400px;"></div>
+
+  <div class="fen-box">
+    <h3>W tej pozycji zagrano: (od #{{ halfmove_start }} do #{{ halfmove_target }} w partii):</h3>
+    <ul>
+      {% for move in blind_moves_list %}
+        <li>{{ move }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- <div class="fen-box">
+    <h3>Pozycja docelowa puzzla (FEN):</h3>
+    <p>{{ puzzle_fen }}</p>
+  </div> -->
+  
+  <p><a href="/puzzle">Wylosuj kolejny puzzle</a></p>
+
+  <div id="controls">
+    <button id="startBtn">Start Position</button>
+    <button id="clearBtn">Clear Board</button>
+  </div>
+
+  <!-- Załaduj jQuery i chessboard.js -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{{ url_for('static', filename='js/chessboard-1.0.0.min.js') }}"></script>
+
+  <script>
+    // FEN cofniętej pozycji z Pythona
+    var fenFromFlask = "{{ fen }}";
+
+    // Inicjujemy chessboard.js
+    var board = Chessboard('board', {
+      pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png',
+      position: fenFromFlask,
+      draggable: false  // w razie czego można dać true, jak chcesz
+    });
+
+    // Proste przyciski
+    $('#startBtn').on('click', function () {
+      board.start(); // standardowe ustawienie
+    });
+    $('#clearBtn').on('click', function () {
+      board.clear(); // pusta szachownica
+    });
+  </script>
+</body>
+</html>

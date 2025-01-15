@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8"/>
+  <title>BlindPuzzles - formularz</title>
+</head>
+<body>
+  <h2>Podaj liczbę półruchów w ciemno</h2>
+  <form action="/puzzle" method="POST">
+    <label for="blind_moves">Blind moves:</label>
+    <input type="number" name="blind_moves" min="0" required>
+    <button type="submit">Wyślij</button>
+  </form>
+</body>
+</html>
