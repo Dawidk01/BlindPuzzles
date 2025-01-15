@@ -69,7 +69,12 @@
       <table class="user-board" id="userBoard"></table>
       <div id="info"></div>
     </div>
+    <div id="info"></div>
+    <div id="messages"></div>
   </div>  
+
+
+
   <p><a href="/puzzle">Wylosuj kolejny puzzle</a></p>
 
 
@@ -134,6 +139,11 @@
 
     var firstClick = null;
     var infoEl = document.getElementById("info");
+    var messagesEl = document.getElementById("messages");
+    function displayMessage(message) {
+  messagesEl.innerHTML += "<p>" + message + "</p>";
+}
+
 
     function onCellClick(e) {
       var sq = e.target.getAttribute('data-square');
@@ -146,33 +156,33 @@
 
         // Sprawdzamy z solutionMoves[currentIndex]
         if (currentIndex >= solutionMoves.length) {
-          alert("Puzzle już jest ukończone!");
+          displayMessage("Puzzle już jest ukończone!");
           resetClicks();
           return;
         }
 
         var expectedMove = solutionMoves[currentIndex];
         if (userMove === expectedMove) {
-          alert("Poprawny ruch: " + userMove);
+          displayMessage("Poprawny ruch: " + userMove);
           currentIndex++;
 
           // Ruch przeciwnika (jeśli jest)
           // bo puzzle najczęściej przeplata: user, opp, user, opp,...
           if (currentIndex < solutionMoves.length && (currentIndex % 2 === 0)) {
             var oppMove = solutionMoves[currentIndex];
-            alert("Ruch przeciwnika: " + oppMove);
+            displayMessage("Ruch przeciwnika: " + oppMove);
             currentIndex++;
           }
 
           // Czy koniec puzzle?
           if (currentIndex >= solutionMoves.length) {
-            alert("Gratulacje, koniec puzzle!");
+            displayMessage("Gratulacje, koniec puzzle!");
             // Wyświetlamy finalną pozycję
             board.position('{{ puzzle_fen }}', false);
           }
 
         } else {
-          alert("Przegrałeś! Oczekiwano " + expectedMove + ", a wybrałeś " + userMove);
+          displayMessage("Przegrałeś! Oczekiwano " + expectedMove + ", a wybrałeś " + userMove);
           disableBoard();
         }
 
