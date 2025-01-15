@@ -1,84 +1,172 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <title>ChessboardJS Example</title>
-  <!-- Załaduj style Chessboard.js ze static/css -->
+  <meta charset="UTF-8">
+  <title>BlindPuzzles</title>
+
+  <!-- Style Chessboard.js -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chessboard-1.0.0.min.css') }}">
-  
-  <!-- Prosty styl, aby ładnie ułożyć przyciski (opcjonalne) -->
+
+  <!-- Dodatkowe style -->
   <style>
-    #controls {
-      margin: 20px 0;
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f3f3;
+      font-family: Arial, sans-serif;
+      color: #333;
     }
-    button {
-      margin-right: 10px;
+
+    h1, h2, h3, p, ul, li, a {
+      margin: 0;
+      padding: 0;
     }
+
+    h1 {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Sekcja linku do oryginalnej partii */
+    .game-link {
+      margin-bottom: 15px;
+    }
+    .game-link a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .game-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Opakowanie dwóch szachownic */
+    .boards-wrapper {
+      display: flex;
+      gap: 20px;
+      justify-content: space-around;
+      align-items: flex-start;
+      margin-top: 20px;
+    }
+
+    /* Lewa szachownica (chessboard.js) + lista ruchów */
+    #board {
+      width: 400px;
+      margin: 0 auto;
+    }
+
+    /* Prawa „pusta” szachownica do klikania */
+    #userBoard {
+      border-collapse: collapse;
+      width: 400px; 
+      height: 400px; 
+      margin: 0 auto;
+    }
+    .user-board td {
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .dark {
+      background-color: #b58863;
+    }
+    .light {
+      background-color: #f0d9b5;
+    }
+
+    /* Pudełko z informacjami (FEN, historią ruchów itp.) */
     .fen-box {
       background-color: #f8f8f8;
-      padding: 10px;
+      padding: 15px;
       border: 1px solid #ccc;
-      margin-bottom: 1rem;
+      margin-top: 20px;
+    }
+    .fen-box h3 {
+      margin-bottom: 10px;
+    }
+    .fen-box ul {
+      list-style-type: disc;
+      margin-left: 20px;
+      margin-top: 5px;
     }
 
-    .user-board td {
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
-  text-align: center;
-  vertical-align: middle;
-}
-.dark {
-  background-color: #b58863; /* ciemne pola */
-}
-.light {
-  background-color: #f0d9b5; /* jasne pola */
-}
+    /* Sekcja z komunikatami (poprawny ruch, błąd itp.) */
+    #info, #messages {
+      margin-top: 10px;
+      font-size: 0.95rem;
+    }
+    #messages p {
+      margin: 5px 0;
+      padding: 0;
+    }
 
+    /* Odnośnik do kolejnego puzzle – w formie przycisku */
+    .next-puzzle-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background-color 0.3s;
+    }
+    .next-puzzle-link:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
-  <h1>BlindPuzzles: Szachownica cofnięta</h1>
+  <h1>BlindPuzzles</h1>
+  <div class="container">
 
-  <!-- Link do oryginalnej partii -->
-  <p>Oryginalna partia: <a href="{{ game_url }}" target="_blank">{{ game_url }}</a></p>
+    <!-- Link do oryginalnej partii -->
+    <div class="game-link">
+      <p>Oryginalna partia: 
+        <a href="{{ game_url }}" target="_blank">{{ game_url }}</a>
+      </p>
+    </div>
 
-  <!-- Informacje o cofniętej pozycji i docelowej pozycji 
-  <div class="fen-box">
-    <h3>Cofnięta pozycja (FEN):</h3>
-    <p>{{ fen }}</p>
-  </div>-->
-
-  <div style="display: flex; gap: 20px;">
-    <!-- Szachownica chessboard.js -->
-    <div>
-      <div id="board" style="width: 400px;"></div>
-  
-      <div class="fen-box">
-        <h3>W tej pozycji zagrano: (od #{{ halfmove_start }} do #{{ halfmove_target }}):</h3>
-        <ul>
-          {% for move in blind_moves_list %}
-            <li>{{ move }}</li>
-          {% endfor %}
-        </ul>
+    <!-- Wrapper na obie szachownice i komunikaty -->
+    <div class="boards-wrapper">
+      
+      <!-- Szachownica chessboard.js + historia ruchów -->
+      <div>
+        <div id="board"></div>
+        <div class="fen-box">
+          <h3>W powyższej pozycji zagrano: (od #{{ halfmove_start }} do #{{ halfmove_target }}):</h3>
+          <ul>
+            {% for move in blind_moves_list %}
+              <li>{{ move }}</li>
+            {% endfor %}
+          </ul>
+        </div>
       </div>
+
+      <!-- Druga, pusta szachownica do klikania -->
+      <div>
+        <table class="user-board" id="userBoard"></table>
+        <div id="info"></div>
+        <div id="messages"></div>
+      </div>
+
     </div>
-  
-    <!-- Druga, pusta szachownica -->
-    <div>
-      <table class="user-board" id="userBoard"></table>
-      <div id="info"></div>
-    </div>
-    <div id="info"></div>
-    <div id="messages"></div>
-  </div>  
 
+    <!-- Link do kolejnego puzzle -->
+    <a href="/puzzle" class="next-puzzle-link">Wylosuj kolejny puzzle</a>
+  </div>
 
-
-  <p><a href="/puzzle">Wylosuj kolejny puzzle</a></p>
-
-
-  <!-- Załaduj jQuery i chessboard.js -->
+  <!-- Biblioteki JS + chessboard.js -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="{{ url_for('static', filename='js/chessboard-1.0.0.min.js') }}"></script>
 
@@ -90,38 +178,16 @@
     var board = Chessboard('board', {
       pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png',
       position: fenFromFlask,
-      draggable: false  // w razie czego można dać true, jak chcesz
+      draggable: false  
     });
 
-    // Proste przyciski
-    $('#startBtn').on('click', function () {
-      board.start(); // standardowe ustawienie
-    });
-    $('#clearBtn').on('click', function () {
-      board.clear(); // pusta szachownica
-    });
-
-
-
-
-    ///////////////////////////////
-    // B) Sekwencja ruchów puzzle (z puzzle[2])
-    ///////////////////////////////
-    // JSON-ujemy je z back-endu
+    // JSON-ujemy listę ruchów z back-endu (np. ["e4e5","f3c3","e5e4","f2f7"]):
     var solutionMoves = {{ solutionMoves|tojson }};
-    // Np. ["e4e5","f3c3","e5e4","f2f7"]
 
-    // Pierwszy ruch (solutionMoves[0]) = ruch przeciwnika (już zrobiony w oryg. puzzle).
-    // Zatem user zaczyna od index=1 (jeśli tam jest ruch).
+    // user zaczyna od index = 1, bo index=0 to poprzedni ruch przeciwnika
     var currentIndex = 1;
 
-
-
-
-
-
-    // C) Budowa pustej szachownicy do klikania
-    ///////////////////////////////
+    // Tworzymy pustą szachownicę 8x8 do klikania
     var userBoardEl = document.getElementById("userBoard");
     var ranks = [8,7,6,5,4,3,2,1];
     var files = ['a','b','c','d','e','f','g','h'];
@@ -140,10 +206,10 @@
     var firstClick = null;
     var infoEl = document.getElementById("info");
     var messagesEl = document.getElementById("messages");
-    function displayMessage(message) {
-  messagesEl.innerHTML += "<p>" + message + "</p>";
-}
 
+    function displayMessage(message) {
+      messagesEl.innerHTML += "<p>" + message + "</p>";
+    }
 
     function onCellClick(e) {
       var sq = e.target.getAttribute('data-square');
@@ -153,8 +219,8 @@
       } else {
         var secondClick = sq;
         var userMove = firstClick + secondClick; // np. "g5g6"
-
-        // Sprawdzamy z solutionMoves[currentIndex]
+        
+        // Jeśli puzzle już ukończone:
         if (currentIndex >= solutionMoves.length) {
           displayMessage("Puzzle już jest ukończone!");
           resetClicks();
@@ -166,26 +232,22 @@
           displayMessage("Poprawny ruch: " + userMove);
           currentIndex++;
 
-          // Ruch przeciwnika (jeśli jest)
-          // bo puzzle najczęściej przeplata: user, opp, user, opp,...
+          // Ruch przeciwnika (jeśli jest i wypada w parzystym indexie)
           if (currentIndex < solutionMoves.length && (currentIndex % 2 === 0)) {
             var oppMove = solutionMoves[currentIndex];
             displayMessage("Ruch przeciwnika: " + oppMove);
             currentIndex++;
           }
 
-          // Czy koniec puzzle?
+          // Koniec puzzle?
           if (currentIndex >= solutionMoves.length) {
             displayMessage("Gratulacje, koniec puzzle!");
-            // Wyświetlamy finalną pozycję
             board.position('{{ puzzle_fen }}', false);
           }
-
         } else {
-          displayMessage("Przegrałeś! Oczekiwano " + expectedMove + ", a wybrałeś " + userMove);
+          displayMessage("Błędny ruch! Oczekiwano: " + expectedMove + ", wybrałeś: " + userMove);
           disableBoard();
         }
-
         resetClicks();
       }
     }
@@ -196,13 +258,11 @@
     }
 
     function disableBoard() {
-      // Wyłącz obsługę clicków
       var cells = userBoardEl.getElementsByTagName("td");
-      for (var i=0; i<cells.length; i++) {
+      for (var i = 0; i < cells.length; i++) {
         cells[i].removeEventListener('click', onCellClick);
       }
     }
-
   </script>
 </body>
 </html>
