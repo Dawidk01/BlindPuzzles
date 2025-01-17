@@ -2,8 +2,9 @@ import io
 import requests
 import chess.pgn
 import sqlite3
+from rating_diff import update_user_rating
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
@@ -44,7 +45,7 @@ def puzzle():
     # Interesuje nas głównie puzzle[1] = fen, puzzle[2] = moves, puzzle[8] = game_url.
     game_url = puzzle[8]  # np. 'https://lichess.org/2clM1WU0/black#54'
     solution_str = puzzle[2]     # puzzle[2] - sekwencja ruchów "e4e5 f3c3 e5e4 f2f7"
-
+    PuzzleId = puzzle[0]
     # Zamień solution_str w tablicę UCI
     # ["e4e5", "f3c3", "e5e4", "f2f7", ...]
     solutionMoves = solution_str.split()
@@ -103,11 +104,85 @@ def puzzle():
         fen=fen_start,                 # Pozycja, w której zaczyna gracz
         puzzle_fen=puzzle_fen,         # Oryginalna pozycja #target
         blind_moves_list=blind_moves_san,
+        blind_moves = blind_moves,
         game_url=game_url,
+        PuzzleId = PuzzleId,
         solutionMoves = solutionMoves,
         halfmove_start=halfmove_start,
         halfmove_target=halfmove_target
     )
+
+@app.route('/submit_result', methods=['POST'])
+def submit_result():
+
+    try:
+        data = request.get_json()
+        print("Odebrane dane:", data)
+    # Pobieramy dane z przesłanego JSON-a
+        puzzle_id = data.get('PuzzleId')
+        solve_date = data.get('SolveDate')
+        solve_time = data.get('SolveTime')
+        result = data.get('Result')
+        blind_moves = data.get('BlindMoves')
+    except Exception as e:
+        print("Wystąpił błąd:", e)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+    # Pobierz ranking zadania z bazy puzzles
+    puzzle_conn = sqlite3.connect("Lichess_Puzzle.db")
+    puzzle_cursor = puzzle_conn.cursor()
+    puzzle_cursor.execute("SELECT Rating FROM puzzles WHERE PuzzleId = ?", (puzzle_id,))
+    puzzle_row = puzzle_cursor.fetchone()
+    puzzle_conn.close()
+
+    user_id = 1  
+    user_conn = sqlite3.connect("User_Puzzle.db")
+    user_cursor = user_conn.cursor()
+    user_cursor.execute("SELECT rating FROM users WHERE id = ?", (user_id,))
+    user_row = user_cursor.fetchone()
+
+    if user_row:
+        old_rating = user_row[0]
+    else:
+        old_rating = 100  # domyślnie, jeśli nie znaleziono
+
+    data = request.get_json()
+    
+
+    if puzzle_row:
+        puzzle_rank = puzzle_row[0]
+    else:
+        puzzle_rank = 1000  # domyślny ranking, jeśli nie znaleziono puzzla
+
+    # Dodaj domyślną wartość, jeśli blind_moves jest None
+    if blind_moves is None:
+        blind_moves = 0
+
+# Oblicz nowy ranking i zmianę rankingu użytkownika
+
+    won = (result == 1)
+    new_rating, change_of_rating = update_user_rating(old_rating, puzzle_rank, blind_moves, won)
+    user_cursor.execute("UPDATE users SET rating = ? WHERE id = ?", (new_rating, user_id))
+    user_conn.commit()
+    user_conn.close()
+
+    # Zapisz dane do bazy user_puzzles z zaktualizowanymi wartościami
+    conn = sqlite3.connect("User_Puzzle.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO user_puzzles 
+        (PuzzleId, SolveDate, SolveTime, Result, BlindMoves, OldUserRating, NewUserRating, ChangeOfRating)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (puzzle_id, solve_date, solve_time, result, blind_moves, old_rating, new_rating, change_of_rating))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        'status': 'success',
+        'new_rating': new_rating,
+        'change': change_of_rating
+    })
+
 
 if __name__ == '__main__':
     app.run(debug=True)

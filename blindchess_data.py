@@ -44,32 +44,3 @@ for i, chunk in enumerate(reader):
 
 # 6. Zamknięcie połączenia
 conn.close()
-
-conn = sqlite3.connect("User_Puzzle.db")
-cursor = conn.cursor()
-
-# Usunięcie starej tabeli (opcjonalne - jeśli chcesz 'czystą' tabelę za każdym razem)
-cursor.execute("DROP TABLE IF EXISTS user_puzzles;")
-
-# Stworzenie nowej tabeli user_puzzles
-# W tym przykładzie klucz główny to autoincrement (ID).
-# Dzięki temu możemy mieć wiele wpisów dla tego samego PuzzleId.
-cursor.execute("""
-    CREATE TABLE user_puzzles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        PuzzleId TEXT,
-        SolveDate TEXT,
-        SolveTime REAL,
-        Result INTEGER,
-        BlindMoves INTEGER,
-        OldUserRating INTEGER,
-        NewUserRating INTEGER,
-        ChangeOfRating INTEGER,
-        FOREIGN KEY(PuzzleId) REFERENCES puzzles(PuzzleId)
-    );
-""")
-
-conn.commit()
-conn.close()
-
-print("Baza danych 'User_Puzzle.db' i tabela 'user_puzzles' zostały utworzone.")

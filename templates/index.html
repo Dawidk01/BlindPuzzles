@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
@@ -16,18 +16,15 @@
       font-family: Arial, sans-serif;
       color: #333;
     }
-
     h1, h2, h3, p, ul, li, a {
       margin: 0;
       padding: 0;
     }
-
     h1 {
       text-align: center;
       margin-top: 20px;
       margin-bottom: 20px;
     }
-
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -35,7 +32,6 @@
       background-color: #fff;
       box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
     }
-
     /* Sekcja linku do oryginalnej partii */
     .game-link {
       margin-bottom: 15px;
@@ -47,7 +43,6 @@
     .game-link a:hover {
       text-decoration: underline;
     }
-
     /* Opakowanie dwóch szachownic */
     .boards-wrapper {
       display: flex;
@@ -56,13 +51,11 @@
       align-items: flex-start;
       margin-top: 20px;
     }
-
     /* Lewa szachownica (chessboard.js) + lista ruchów */
     #board {
       width: 400px;
       margin: 0 auto;
     }
-
     /* Prawa „pusta” szachownica do klikania */
     #userBoard {
       border-collapse: collapse;
@@ -83,7 +76,6 @@
     .light {
       background-color: #f0d9b5;
     }
-
     /* Pudełko z informacjami (FEN, historią ruchów itp.) */
     .fen-box {
       background-color: #f8f8f8;
@@ -99,7 +91,6 @@
       margin-left: 20px;
       margin-top: 5px;
     }
-
     /* Sekcja z komunikatami (poprawny ruch, błąd itp.) */
     #info, #messages {
       margin-top: 10px;
@@ -109,7 +100,6 @@
       margin: 5px 0;
       padding: 0;
     }
-
     /* Odnośnik do kolejnego puzzle – w formie przycisku */
     .next-puzzle-link {
       display: inline-block;
@@ -170,99 +160,205 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="{{ url_for('static', filename='js/chessboard-1.0.0.min.js') }}"></script>
 
-  <script>
-    // FEN cofniętej pozycji z Pythona
-    var fenFromFlask = "{{ fen }}";
+<script>
+  var puzzleFailed = false;
+  var puzzleStartTime = new Date();  // Czas rozpoczęcia puzzla
 
-    // Inicjujemy chessboard.js
-    var board = Chessboard('board', {
-      pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png',
-      position: fenFromFlask,
-      draggable: false  
-    });
+  // FEN cofniętej pozycji z Pythona
+  var fenFromFlask = "{{ fen }}";
 
-    // JSON-ujemy listę ruchów z back-endu (np. ["e4e5","f3c3","e5e4","f2f7"]):
-    var solutionMoves = {{ solutionMoves|tojson }};
+  // Pobranie game_url z szablonu Flask
+  var gameUrl = "{{ game_url }}";
 
-    // user zaczyna od index = 1, bo index=0 to poprzedni ruch przeciwnika
-    var currentIndex = 1;
+  // Wyodrębnienie części po znaku '#' oraz konwersja na liczbę całkowitą
+  var lastPart = gameUrl.split('#').pop();
+  var num = parseInt(lastPart, 10);
 
-    // Tworzymy pustą szachownicę 8x8 do klikania
-    var userBoardEl = document.getElementById("userBoard");
-    var ranks = [8,7,6,5,4,3,2,1];
-    var files = ['a','b','c','d','e','f','g','h'];
+  // Ustalenie orientacji na podstawie parzystości numeru
+  var boardOrientation = (num % 2 === 1) ? 'black' : 'white';
 
-    for (var r = 0; r < 8; r++) {
-      var row = userBoardEl.insertRow();
-      for (var c = 0; c < 8; c++) {
-        var cell = row.insertCell();
-        cell.classList.add(((r + c) % 2 === 0) ? 'dark' : 'light');
-        var sq = files[c] + ranks[r]; // np. "a8"
-        cell.setAttribute('data-square', sq);
-        cell.addEventListener('click', onCellClick);
-      }
+  // Inicjujemy chessboard.js
+  var board = Chessboard('board', {
+    pieceTheme: '/static/img/chesspieces/wikipedia/{piece}.png',
+    position: fenFromFlask,
+    draggable: false,
+    orientation: boardOrientation
+  });
+
+  // JSON-ujemy listę ruchów z back-endu
+  var solutionMovesJson = '{{ solutionMoves|tojson|safe }}';
+var solutionMoves = JSON.parse(solutionMovesJson);
+  console.log(solutionMoves);
+
+  var currentIndex = 1;
+
+  var ranks, files;
+  if(boardOrientation === 'black'){
+      ranks = [1,2,3,4,5,6,7,8];
+      files = ['h','g','f','e','d','c','b','a'];
+  } else {
+      ranks = [8,7,6,5,4,3,2,1];
+      files = ['a','b','c','d','e','f','g','h'];
+  }
+
+  var userBoardEl = document.getElementById("userBoard");
+  userBoardEl.innerHTML = "";
+
+  // Górny wiersz z etykietami plików
+  var topRow = userBoardEl.insertRow();
+  var emptyCell = topRow.insertCell();
+  for(var f = 0; f < 8; f++){
+      var cell = topRow.insertCell();
+      cell.innerText = files[f];
+      cell.style.textAlign = "center";
+  }
+
+  // Wiersze planszy z etykietami rang i kolorowaniem pól
+  for (var r = 0; r < 8; r++) {
+    var row = userBoardEl.insertRow();
+    var rankLabelCell = row.insertCell();
+    rankLabelCell.innerText = ranks[r];
+    rankLabelCell.style.textAlign = "center";
+    for (var c = 0; c < 8; c++) {
+      var cell = row.insertCell();
+
+      // Warunkowe określenie koloru pola
+      // Standardowe określenie koloru pola, niezależnie od orientacji
+var isDark = ((r + c) % 2 === 0);
+cell.classList.add(isDark ? 'light' : 'dark');
+
+
+      var sq = files[c] + ranks[r];
+      cell.setAttribute('data-square', sq);
+      cell.addEventListener('click', onCellClick);
     }
+  }
 
-    var firstClick = null;
-    var infoEl = document.getElementById("info");
-    var messagesEl = document.getElementById("messages");
+  // Dolny wiersz z etykietami plików
+  var bottomRow = userBoardEl.insertRow();
+  var bottomEmpty = bottomRow.insertCell();
+  for(var f = 0; f < 8; f++){
+      var cell = bottomRow.insertCell();
+      cell.innerText = files[f];
+      cell.style.textAlign = "center";
+  }
 
-    function displayMessage(message) {
-      messagesEl.innerHTML += "<p>" + message + "</p>";
-    }
+  var firstClick = null;
+  var infoEl = document.getElementById("info");
+  var messagesEl = document.getElementById("messages");
 
-    function onCellClick(e) {
-      var sq = e.target.getAttribute('data-square');
-      if (!firstClick) {
-        firstClick = sq;
-        infoEl.innerText = "Źródło: " + sq;
-      } else {
-        var secondClick = sq;
-        var userMove = firstClick + secondClick; // np. "g5g6"
-        
-        // Jeśli puzzle już ukończone:
-        if (currentIndex >= solutionMoves.length) {
-          displayMessage("Puzzle już jest ukończone!");
-          resetClicks();
-          return;
-        }
+  function displayMessage(message) {
+    messagesEl.innerHTML += "<p>" + message + "</p>";
+  }
 
-        var expectedMove = solutionMoves[currentIndex];
-        if (userMove === expectedMove) {
-          displayMessage("Poprawny ruch: " + userMove);
-          currentIndex++;
-
-          // Ruch przeciwnika (jeśli jest i wypada w parzystym indexie)
-          if (currentIndex < solutionMoves.length && (currentIndex % 2 === 0)) {
-            var oppMove = solutionMoves[currentIndex];
-            displayMessage("Ruch przeciwnika: " + oppMove);
-            currentIndex++;
-          }
-
-          // Koniec puzzle?
-          if (currentIndex >= solutionMoves.length) {
-            displayMessage("Gratulacje, koniec puzzle!");
-            board.position('{{ puzzle_fen }}', false);
-          }
-        } else {
-          displayMessage("Błędny ruch! Oczekiwano: " + expectedMove + ", wybrałeś: " + userMove);
-          disableBoard();
-        }
+  function onCellClick(e) {
+    var sq = e.target.getAttribute('data-square');
+    if (!firstClick) {
+      firstClick = sq;
+      infoEl.innerText = "Źródło: " + sq;
+    } else {
+      var secondClick = sq;
+      var userMove = firstClick + secondClick; // np. "g5g6"
+      
+      // Jeśli puzzle już ukończone:
+      if (currentIndex >= solutionMoves.length) {
+        displayMessage("Puzzle już jest ukończone!");
         resetClicks();
+        return;
       }
-    }
 
-    function resetClicks() {
-      firstClick = null;
-      infoEl.innerText = "";
-    }
+      var expectedMove = solutionMoves[currentIndex];
+      if (userMove === expectedMove) {
+        displayMessage("Poprawny ruch: " + userMove);
+        currentIndex++;
 
-    function disableBoard() {
-      var cells = userBoardEl.getElementsByTagName("td");
-      for (var i = 0; i < cells.length; i++) {
-        cells[i].removeEventListener('click', onCellClick);
+        // Ruch przeciwnika (jeśli jest i wypada w parzystym indexie)
+        if (currentIndex < solutionMoves.length && (currentIndex % 2 === 0)) {
+          var oppMove = solutionMoves[currentIndex];
+          displayMessage("Ruch przeciwnika: " + oppMove);
+          currentIndex++;
+        }
+
+        // Koniec puzzle?
+        if (currentIndex >= solutionMoves.length) {
+          displayMessage("Gratulacje, koniec puzzle!");
+          board.position('{{ puzzle_fen }}', false);
+
+          // Logika zapisu w przypadku sukcesu
+          var puzzleEndTime = new Date();
+          var solveTimeInSeconds = (puzzleEndTime - puzzleStartTime) / 1000;
+var BlindMovesJson = '{{blind_moves|tojson|safe}}';
+var BlindMoves = JSON.parse(BlindMovesJson)
+          var successData = {
+            PuzzleId: "{{ PuzzleId }}",
+            SolveDate: new Date().toISOString(),
+            SolveTime: solveTimeInSeconds,
+            Result: 1,
+            BlindMoves: BlindMoves,
+          };
+
+          fetch('/submit_result', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(successData)
+          }).then(response => response.json())
+            .then(respData => {
+              console.log('Wynik zapisany:', respData);
+            }).catch(err => {
+              console.error('Błąd podczas zapisywania wyniku:', err);
+            });
+        }
+      } else {
+        displayMessage("Błędny ruch! Oczekiwano: " + expectedMove + ", wybrałeś: " + userMove);
+
+        // Logika zapisu w przypadku błędu, tylko raz
+        if (!puzzleFailed) {
+          puzzleFailed = true;
+          var puzzleEndTime = new Date();
+          var solveTimeInSeconds = (puzzleEndTime - puzzleStartTime) / 1000;
+
+          var failureData = {
+            PuzzleId: "{{ PuzzleId }}",
+            SolveDate: new Date().toISOString(),
+            SolveTime: solveTimeInSeconds,
+            Result: 0,
+            BlindMoves: BlindMoves,
+          };
+
+          fetch('/submit_result', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(failureData)
+          }).then(response => response.json())
+            .then(respData => {
+              console.log('Wynik zapisany (nieudany):', respData);
+            }).catch(err => {
+              console.error('Błąd podczas zapisywania wyniku:', err);
+            });
+        }
+
+        disableBoard();
       }
+      resetClicks();
     }
-  </script>
+  }
+
+  function resetClicks() {
+    firstClick = null;
+    infoEl.innerText = "";
+  }
+
+  function disableBoard() {
+    var cells = userBoardEl.getElementsByTagName("td");
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].removeEventListener('click', onCellClick);
+    }
+  }
+</script>
+
 </body>
 </html>
