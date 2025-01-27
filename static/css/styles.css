@@ -1,0 +1,127 @@
+   body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f3f3;
+      font-family: Arial, sans-serif;
+      color: #333;
+    }
+    h1, h2, h3, p, ul, li, a {
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+    /* Sekcja linku do oryginalnej partii */
+    .game-link {
+      margin-bottom: 15px;
+    }
+    .game-link a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .game-link a:hover {
+      text-decoration: underline;
+    }
+    /* Opakowanie dwóch szachownic */
+    .boards-wrapper {
+      display: flex;
+      gap: 20px;
+      justify-content: space-around;
+      align-items: flex-start;
+      margin-top: 20px;
+    }
+    /* Lewa szachownica (chessboard.js) + lista ruchów */
+    #board {
+      width: 400px;
+      margin: 0 auto;
+    }
+    /* Prawa „pusta” szachownica do klikania */
+    #userBoard {
+      border-collapse: collapse;
+      width: 400px; 
+      height: 400px; 
+      margin: 0 auto;
+    }
+    .user-board td {
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .dark {
+      background-color: #b58863;
+    }
+    .light {
+      background-color: #f0d9b5;
+    }
+    /* Pudełko z informacjami (FEN, historią ruchów itp.) */
+    .fen-box {
+      background-color: #f8f8f8;
+      padding: 15px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+    .fen-box h3 {
+      margin-bottom: 10px;
+    }
+    .fen-box ul {
+      list-style-type: disc;
+      margin-left: 20px;
+      margin-top: 5px;
+    }
+    /* Sekcja z komunikatami (poprawny ruch, błąd itp.) */
+    #info, #messages {
+      margin-top: 10px;
+      font-size: 0.95rem;
+    }
+    #messages p {
+      margin: 5px 0;
+      padding: 0;
+    }
+    /* Odnośnik do kolejnego puzzle – w formie przycisku */
+    .next-puzzle-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background-color 0.3s;
+    }
+    .next-puzzle-link:hover {
+      background-color: #0056b3;
+    }
+
+    .rating-info {
+      background-color: #f5f5f5; 
+      border: 1px solid #ddd;
+      padding: 1em;
+      border-radius: 4px;
+      margin-bottom: 1em;
+    }
+    
+    .rating-info p {
+      margin: 0.3em 0;
+    }
+    .ranking-up {
+      color: green;
+      font-weight: bold;
+    }
+    
+    .ranking-down {
+      color: red;
+      font-weight: bold;
+    }
+        

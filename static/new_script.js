@@ -1,65 +1,3 @@
-<!DOCTYPE html> 
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <title>BlindPuzzles</title>
-
-  <!-- Style Chessboard.js -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/chessboard-1.0.0.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
-  <!-- Dodatkowe style -->
- </head>
-<body>
-  <h1>BlindPuzzles</h1>
-  <div class="rating-info">
-    <p>Twój aktualny ranking: <strong>{{ user_rating }}</strong></p>
-    <p>Masz <strong>{{ '%.1f'|format(P_user*100) }}%</strong> szans na rozwiązanie tego puzzla. </p>
-  </div>
-
-  <div class="container">
-
-    <!-- Link do oryginalnej partii -->
-    <div class="game-link">
-      <p>Oryginalna partia: 
-        <a href="{{ game_url }}" target="_blank">{{ game_url }}</a>
-      </p>
-    </div>
-
-    <!-- Wrapper na obie szachownice i komunikaty -->
-    <div class="boards-wrapper">
-      
-      <!-- Szachownica chessboard.js + historia ruchów -->
-      <div>
-        <div id="board"></div>
-        <div class="fen-box">
-          <h3>W powyższej pozycji zagrano: (od #{{ halfmove_start }} do #{{ halfmove_target }}):</h3>
-          <ul>
-            {% for move in blind_moves_list %}
-              <li>{{ move }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-
-      <!-- Druga, pusta szachownica do klikania -->
-      <div>
-        <table class="user-board" id="userBoard"></table>
-        <div id="info"></div>
-        <div id="messages"></div>
-      </div>
-
-    </div>
-
-    <!-- Link do kolejnego puzzle -->
-    <a href="/puzzle" class="next-puzzle-link">Wylosuj kolejny puzzle</a>
-  </div>
-
-  <!-- Biblioteki JS + chessboard.js -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="{{ url_for('static', filename='js/chessboard-1.0.0.min.js') }}"></script>
-
-<script>
   var puzzleFailed = false;
   var puzzleStartTime = new Date();  // Czas rozpoczęcia puzzla
 
@@ -203,25 +141,9 @@ var BlindMoves = JSON.parse(BlindMovesJson)
             },
             body: JSON.stringify(successData)
           }).then(response => response.json())
-          .then(respData => {
-  console.log('Wynik zapisany:', respData);
-  if (respData.status === 'success') {
-    // Wyciągamy dane o zmianie rankingu
-    const change = respData.change;
-    const newRating = respData.new_rating;
-
-    if (change > 0) {
-      displayMessage(`<span class="ranking-up">Brawo! Twój ranking wzrósł o ${change} punktów. 
-                  Teraz masz ${newRating}.</span>`);
-    } else if (change < 0) {
-      displayMessage(`<span class="ranking-down">Tym razem niestety straciłeś ${Math.abs(change)} punktów. Teraz masz ${newRating}.</span>`);
-    } else {
-      displayMessage(`Ranking bez zmian. Dalej masz ${newRating} punktów.`);
-    }
-  }
-})
-
-            .catch(err => {
+            .then(respData => {
+              console.log('Wynik zapisany:', respData);
+            }).catch(err => {
               console.error('Błąd podczas zapisywania wyniku:', err);
             });
         }
@@ -249,24 +171,9 @@ var BlindMoves = JSON.parse(BlindMovesJson)
             },
             body: JSON.stringify(failureData)
           }).then(response => response.json())
-          .then(respData => {
-  console.log('Wynik zapisany:', respData);
-  if (respData.status === 'success') {
-    // Wyciągamy dane o zmianie rankingu
-    const change = respData.change;
-    const newRating = respData.new_rating;
-
-    if (change > 0) {
-      displayMessage(`<span class="ranking-up">Brawo! Twój ranking wzrósł o ${change} punktów. 
-                  Teraz masz ${newRating}.</span>`);
-    } else if (change < 0) {
-      displayMessage(`<span class="ranking-down">Tym razem niestety straciłeś ${Math.abs(change)} punktów. Teraz masz ${newRating}.</span>`);
-    } else {
-      displayMessage(`Ranking bez zmian. Dalej masz ${newRating} punktów.`);
-    }
-  }
-})
-.catch(err => {
+            .then(respData => {
+              console.log('Wynik zapisany (nieudany):', respData);
+            }).catch(err => {
               console.error('Błąd podczas zapisywania wyniku:', err);
             });
         }
@@ -288,7 +195,3 @@ var BlindMoves = JSON.parse(BlindMovesJson)
       cells[i].removeEventListener('click', onCellClick);
     }
   }
-</script>
-
-</body>
-</html>
