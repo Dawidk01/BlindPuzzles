@@ -1,8 +1,7 @@
 # routes/home_route.py
 
+from flask import render_template
+
 def home():
-    """Strona główna: link do nowej zagadki."""
-    return """
-    <h1>Witaj w BlindPuzzles!</h1>
-    <p><a href='/puzzle'>New Puzzle</a></p>
-    """
+    """Strona główna"""
+    return render_template("home.html")

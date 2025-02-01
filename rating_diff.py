@@ -1,7 +1,7 @@
 def update_user_rating(user_rank, puzzle_rank, blind_moves, won):
     # Oblicz efektywny ranking zadania X
-    X = puzzle_rank + 100 * blind_moves
-
+    X = puzzle_rank + 2.5 * blind_moves ** 2 + 97.5 * blind_moves
+    X = round(X)
     # Oblicz prawdopodobieństwa
     P_user = 1/(1+10**((X-user_rank)/800)) 
 
@@ -11,9 +11,9 @@ def update_user_rating(user_rank, puzzle_rank, blind_moves, won):
 
     # Aktualizuj ranking na podstawie wyniku
     if won:
-        user_rank += 24*(1-P_user)
+        user_rank += 32*(1-P_user)
     else:
-        user_rank += 32*(0-P_user)
+        user_rank += 48*(0-P_user)
 
     # Zaokrąglij nowy ranking do najbliższej liczby całkowitej
     new_user_rank = round(user_rank)
