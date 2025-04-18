@@ -8,3 +8,10 @@ Witaj w Blind Puzzles!
 5. Uruchom app.py
 
 I GRAJ !!!
+
+Podaj ile chcesz ruchów na ślepo i rozwiąż zadanie na wirtualnej szachownicy (przez kliknięcie na odpowiednie pola, lub wpisując ruch w pole tekstowe).
+
+Zadania pochodzić będą z bazy danych puzzli, którą stworzyłeś za pomocą blindchess_data.py. 
+Twoje rezultaty zostaną zapisane do bazy danych, którą stworzyłeś za pomocą userpuzzle_data.py.
+
+Zobacz "Summary", gdzie mamy przykładowy wgląd w utworzone bazy danych przez użytkownika. 
