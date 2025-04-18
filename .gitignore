@@ -2,3 +2,6 @@ Env/
 *.db
 *.csv
 .idea/
+BlindChess.ipynb
+user_puzzles.xlsx
+user_puzzles_with_rating.xlsx
