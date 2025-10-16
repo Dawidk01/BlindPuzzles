@@ -1,8 +1,13 @@
 # routes/result_route.py
 
 import sqlite3
-from flask import request, jsonify
+from flask import jsonify, request
 from rating_diff import update_user_rating
+
+from utils.db_helpers import get_user_variant_rating, set_user_variant_rating
+
+
+USER_ID = 1
 
 def submit_result():
     try:
@@ -24,17 +29,6 @@ def submit_result():
     puzzle_row = puzzle_cursor.fetchone()
     puzzle_conn.close()
 
-    user_id = 1  
-    user_conn = sqlite3.connect("User_Puzzle.db")
-    user_cursor = user_conn.cursor()
-    user_cursor.execute("SELECT rating FROM users WHERE id = ?", (user_id,))
-    user_row = user_cursor.fetchone()
-
-    if user_row:
-        old_rating = user_row[0]
-    else:
-        old_rating = 100  # domyślnie, jeśli nie znaleziono
-
     if puzzle_row:
         puzzle_rank = puzzle_row[0]
     else:
@@ -43,12 +37,23 @@ def submit_result():
     # Dodaj domyślną wartość, jeśli blind_moves jest None
     if blind_moves is None:
         blind_moves = 0
+    try:
+        blind_moves = int(blind_moves)
+    except (TypeError, ValueError):
+        blind_moves = 0
+
+    try:
+        result_value = int(result)
+    except (TypeError, ValueError):
+        result_value = 0
+    result = result_value
 
     won = (result == 1)
-    new_rating, change_of_rating = update_user_rating(old_rating, puzzle_rank, blind_moves, won)
-    user_cursor.execute("UPDATE users SET rating = ? WHERE id = ?", (new_rating, user_id))
-    user_conn.commit()
-    user_conn.close()
+    old_rating = get_user_variant_rating(USER_ID, blind_moves)
+    new_rating, change_of_rating = update_user_rating(
+        old_rating, puzzle_rank, blind_moves, won
+    )
+    set_user_variant_rating(USER_ID, blind_moves, new_rating)
 
     # Zapisz dane do bazy user_puzzles
     conn = sqlite3.connect("User_Puzzle.db")

@@ -4,35 +4,39 @@ import io
 import requests
 import chess.pgn
 import sqlite3
-from flask import render_template, request
+from flask import redirect, render_template, request, url_for
+
+from utils.db_helpers import get_user_variant_rating
+
+
+USER_ID = 1
+
 
 def puzzle():
-    user_id = 1  
-    user_conn = sqlite3.connect("User_Puzzle.db")
-    user_cursor = user_conn.cursor()
-    user_cursor.execute("SELECT rating FROM users WHERE id = ?", (user_id,))
-    user_row = user_cursor.fetchone()
-
-    if user_row:
-        user_rating = user_row[0]
+    """Losuje puzzle dla wariantu o zadanej liczbie ruchów w ciemno."""
+    if request.method == 'POST':
+        blind_moves_raw = request.form.get('blind_moves', 0)
     else:
-        user_rating = 100  # domyślnie, jeśli nie znaleziono
+        if 'blind_moves' not in request.args:
+            return redirect(url_for('home'))
+        blind_moves_raw = request.args.get('blind_moves', 0)
 
+    try:
+        blind_moves = max(0, int(blind_moves_raw))
+    except (TypeError, ValueError):
+        return redirect(url_for('home'))
 
-    """Formularz: liczba ruchów w ciemno (POST); potem losujemy puzzle i pokazujemy wynik."""
-    if request.method == 'GET':
-        # Zwracamy Twój istniejący szablon form.html
-        return render_template("form.html")
-
-    # Gdy POST, przetwarzamy liczbę "ruchów w ciemno"
-    blind_moves = int(request.form.get('blind_moves', 0))
+    user_rating = get_user_variant_rating(USER_ID, blind_moves)
 
     # Pobierz userpuzzles
     conn = sqlite3.connect("User_Puzzle.db")
     cursor = conn.cursor()
 
-# Zapytanie o wszystkie tabele w bazie danych
-    cursor.execute("SELECT PuzzleID FROM user_puzzles;")
+    # Zapytanie o puzzle rozwiązane w ramach tego wariantu
+    cursor.execute(
+        "SELECT PuzzleID FROM user_puzzles WHERE COALESCE(BlindMoves, 0) = ?;",
+        (blind_moves,)
+    )
     puzzleid_rows = cursor.fetchall()  # to jest lista krotek
     puzzleid = [row[0] for row in puzzleid_rows]
     conn.close()
