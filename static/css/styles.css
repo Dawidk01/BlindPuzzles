@@ -1,4 +1,4 @@
-   body {
+    body {
       margin: 0;
       padding: 0;
       background-color: #f3f3f3;
@@ -105,13 +105,13 @@
     }
 
     .rating-info {
-      background-color: #f5f5f5; 
+      background-color: #f5f5f5;
       border: 1px solid #ddd;
       padding: 1em;
       border-radius: 4px;
       margin-bottom: 1em;
     }
-    
+
     .rating-info p {
       margin: 0.3em 0;
     }
@@ -119,20 +119,167 @@
       color: green;
       font-weight: bold;
     }
-    
+
     .ranking-down {
       color: red;
       font-weight: bold;
     }
     body {
       /* tło  */
-      background-color: #f5f5f5; 
+      background-color: #f5f5f5;
     }
-    
+
     .user-board .dark {
       background-color: #b58863;  /* brąz */
     }
     .user-board .light {
       background-color: #f0d9b5;  /* beż */
+    }
+
+    /* --- Nowe elementy UI dla strony głównej i nagłówka puzzle --- */
+    .hero-section {
+      background: linear-gradient(135deg, #1d2b64, #f8cdda);
+    }
+
+    .hero-card {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 1rem;
+      padding: 2rem;
+    }
+
+    .stat-bubble {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      padding: 1rem 1.5rem;
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      color: #fff;
+    }
+
+    .stat-label {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .variant-card {
+      border: none;
+      border-radius: 1rem;
+      background: #fff;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .variant-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(29, 43, 100, 0.08);
+      pointer-events: none;
+    }
+
+    .variant-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 30px rgba(31, 41, 55, 0.15);
+    }
+
+    .variant-badge {
+      align-self: flex-start;
+      background: linear-gradient(135deg, rgba(29, 43, 100, 0.15), rgba(248, 205, 218, 0.15));
+      color: #1d2b64;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
+    }
+
+    .variant-body {
+      flex: 1;
+    }
+
+    .variant-metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+    }
+
+    .variant-metric:last-of-type {
+      border-bottom: none;
+    }
+
+    .metric-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6c757d;
+    }
+
+    .metric-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1d2b64;
+    }
+
+    .variant-selector select {
+      min-width: 230px;
+    }
+
+    .variant-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(29, 43, 100, 0.1);
+      color: #1d2b64;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.8rem;
+    }
+
+    .table-history table {
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+
+    .table-history .badge {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.6rem;
+    }
+
+    .table-history td,
+    .table-history th {
+      vertical-align: middle;
+    }
+
+    .table-history tr:hover td {
+      background: rgba(29, 43, 100, 0.03);
+    }
+
+    @media (max-width: 576px) {
+      .variant-card {
+        padding: 1.25rem;
+      }
+
+      .variant-selector select {
+        min-width: 100%;
+      }
     }
     
