@@ -254,6 +254,25 @@
       font-size: 0.8rem;
     }
 
+    .table-history table {
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+
+    .table-history .badge {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.6rem;
+    }
+
+    .table-history td,
+    .table-history th {
+      vertical-align: middle;
+    }
+
+    .table-history tr:hover td {
+      background: rgba(29, 43, 100, 0.03);
+    }
+
     @media (max-width: 576px) {
       .variant-card {
         padding: 1.25rem;

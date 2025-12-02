@@ -2,13 +2,25 @@
 from __future__ import annotations
 
 import sqlite3
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 USER_DB_PATH = "User_Puzzle.db"
 DEFAULT_START_RATING = 500
-PRIMARY_VARIANTS = [2, 5, 10, 20, 40]
+# Wyróżnione warianty w sekcji kafelków na stronie głównej.
+PRIMARY_VARIANTS = [5, 10, 20]
 # Variants we want to show in the dropdown by default.
 BASE_VARIANT_CHOICES = list(range(0, 51))
+
+ATTEMPT_FIELDS = (
+    "puzzle_id",
+    "solve_date",
+    "solve_time",
+    "result",
+    "blind_moves",
+    "old_rating",
+    "new_rating",
+    "rating_diff",
+)
 
 
 def _ensure_tables(cursor: sqlite3.Cursor) -> None:
@@ -152,3 +164,36 @@ def get_variant_statistics(
         }
 
     return statistics
+
+
+def get_user_attempts(limit: int | None = 500) -> List[Dict[str, object]]:
+    """Pobiera historię prób użytkownika w formie listy słowników."""
+
+    with sqlite3.connect(USER_DB_PATH) as conn:
+        cursor = conn.cursor()
+        _ensure_tables(cursor)
+        query = (
+            """
+            SELECT PuzzleId, SolveDate, SolveTime, Result, COALESCE(BlindMoves, 0),
+                   OldUserRating, NewUserRating, ChangeOfRating
+            FROM user_puzzles
+            ORDER BY datetime(COALESCE(SolveDate, '1970-01-01 00:00:00')) DESC, id DESC
+            """
+        )
+        if limit is not None:
+            query += "\n            LIMIT ?"
+            cursor.execute(query, (limit,))
+        else:
+            cursor.execute(query)
+
+        rows = cursor.fetchall()
+
+    attempts: List[Dict[str, object]] = []
+    for row in rows:
+        record = dict(zip(ATTEMPT_FIELDS, row))
+        # Ujednolicenie typów i zabezpieczenie przed wartościami None.
+        record["blind_moves"] = int(record.get("blind_moves") or 0)
+        record["result"] = int(record.get("result") or 0)
+        attempts.append(record)
+
+    return attempts
