@@ -51,7 +51,7 @@ def submit_result():
     won = (result == 1)
     old_rating = get_user_variant_rating(USER_ID, blind_moves)
     new_rating, change_of_rating = update_user_rating(
-        old_rating, puzzle_rank, blind_moves, won
+        old_rating, puzzle_rank, won
     )
     set_user_variant_rating(USER_ID, blind_moves, new_rating)
 

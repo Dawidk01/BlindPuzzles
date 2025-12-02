@@ -5,7 +5,7 @@ import sqlite3
 from typing import Dict, Iterable, Tuple
 
 USER_DB_PATH = "User_Puzzle.db"
-DEFAULT_START_RATING = 100
+DEFAULT_START_RATING = 500
 PRIMARY_VARIANTS = [2, 5, 10, 20, 40]
 # Variants we want to show in the dropdown by default.
 BASE_VARIANT_CHOICES = list(range(0, 51))

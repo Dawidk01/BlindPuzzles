@@ -58,8 +58,7 @@ def puzzle():
             PuzzleRating = puzzle[3]
         else:
             PuzzleRating = 1000
-        X = PuzzleRating + 2.5 * blind_moves ** 2 + 97.5 * blind_moves
-        X = round(X)
+        X = round(PuzzleRating)
         P_user = 1/(1+10**((X-user_rating)/800))
         # Sprawdzenie warunku puzzla ID
         if puzzle[0] in puzzleid:
