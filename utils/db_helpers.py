@@ -1,10 +1,12 @@
-"""Utilities for managing user-specific variant data."""
+"""Helpers for reading/writing user state in PostgreSQL."""
 from __future__ import annotations
 
-import sqlite3
 from typing import Dict, Iterable, List, Tuple
 
-USER_DB_PATH = "User_Puzzle.db"
+from sqlalchemy import text
+
+from utils.db import engine
+
 DEFAULT_START_RATING = 500
 # Wyróżnione warianty w sekcji kafelków na stronie głównej.
 PRIMARY_VARIANTS = [5, 10, 20]
@@ -23,44 +25,50 @@ ATTEMPT_FIELDS = (
 )
 
 
-def _ensure_tables(cursor: sqlite3.Cursor) -> None:
+def _ensure_tables(conn) -> None:
     """Make sure the auxiliary tables required for the new variant system exist."""
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS user_variant_ratings (
-            user_id INTEGER NOT NULL,
-            blind_moves INTEGER NOT NULL,
-            rating INTEGER NOT NULL,
-            PRIMARY KEY (user_id, blind_moves)
-        );
-        """
+    conn.execute(
+        text(
+            """
+            CREATE TABLE IF NOT EXISTS user_variant_ratings (
+                user_id INTEGER NOT NULL,
+                blind_moves INTEGER NOT NULL,
+                rating INTEGER NOT NULL,
+                PRIMARY KEY (user_id, blind_moves)
+            );
+            """
+        )
     )
 
     # Keep compatibility with the previous structure – create the users table if it
     # disappeared, but do not rely on it anywhere else.
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            rating INTEGER
-        );
-        """
+    conn.execute(
+        text(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY,
+                rating INTEGER
+            );
+            """
+        )
     )
 
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS user_puzzles (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            PuzzleId TEXT,
-            SolveDate TEXT,
-            SolveTime REAL,
-            Result INTEGER,
-            BlindMoves INTEGER,
-            OldUserRating INTEGER,
-            NewUserRating INTEGER,
-            ChangeOfRating INTEGER
-        );
-        """
+    conn.execute(
+        text(
+            """
+            CREATE TABLE IF NOT EXISTS user_puzzles (
+                id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                PuzzleId TEXT,
+                SolveDate TEXT,
+                SolveTime REAL,
+                Result INTEGER,
+                BlindMoves INTEGER,
+                OldUserRating INTEGER,
+                NewUserRating INTEGER,
+                ChangeOfRating INTEGER
+            );
+            """
+        )
     )
 
 
@@ -69,23 +77,25 @@ def get_user_variant_rating(user_id: int, blind_moves: int) -> int:
     if blind_moves is None:
         blind_moves = 0
 
-    with sqlite3.connect(USER_DB_PATH) as conn:
-        cursor = conn.cursor()
-        _ensure_tables(cursor)
-        cursor.execute(
-            """
-            INSERT OR IGNORE INTO user_variant_ratings (user_id, blind_moves, rating)
-            VALUES (?, ?, ?)
-            """,
-            (user_id, blind_moves, DEFAULT_START_RATING),
+    with engine.begin() as conn:
+        _ensure_tables(conn)
+        conn.execute(
+            text(
+                """
+                INSERT INTO user_variant_ratings (user_id, blind_moves, rating)
+                VALUES (:user_id, :blind_moves, :rating)
+                ON CONFLICT (user_id, blind_moves) DO NOTHING
+                """
+            ),
+            {"user_id": user_id, "blind_moves": blind_moves, "rating": DEFAULT_START_RATING},
         )
-        conn.commit()
 
-        cursor.execute(
-            "SELECT rating FROM user_variant_ratings WHERE user_id = ? AND blind_moves = ?",
-            (user_id, blind_moves),
-        )
-        row = cursor.fetchone()
+        row = conn.execute(
+            text(
+                "SELECT rating FROM user_variant_ratings WHERE user_id = :user_id AND blind_moves = :blind_moves"
+            ),
+            {"user_id": user_id, "blind_moves": blind_moves},
+        ).fetchone()
 
     return row[0] if row else DEFAULT_START_RATING
 
@@ -95,18 +105,18 @@ def set_user_variant_rating(user_id: int, blind_moves: int, rating: int) -> None
     if blind_moves is None:
         blind_moves = 0
 
-    with sqlite3.connect(USER_DB_PATH) as conn:
-        cursor = conn.cursor()
-        _ensure_tables(cursor)
-        cursor.execute(
-            """
-            INSERT INTO user_variant_ratings (user_id, blind_moves, rating)
-            VALUES (?, ?, ?)
-            ON CONFLICT(user_id, blind_moves) DO UPDATE SET rating = excluded.rating
-            """,
-            (user_id, blind_moves, rating),
+    with engine.begin() as conn:
+        _ensure_tables(conn)
+        conn.execute(
+            text(
+                """
+                INSERT INTO user_variant_ratings (user_id, blind_moves, rating)
+                VALUES (:user_id, :blind_moves, :rating)
+                ON CONFLICT(user_id, blind_moves) DO UPDATE SET rating = excluded.rating
+                """
+            ),
+            {"user_id": user_id, "blind_moves": blind_moves, "rating": rating},
         )
-        conn.commit()
 
 
 def get_variant_statistics(
@@ -116,37 +126,39 @@ def get_variant_statistics(
     """Gather rating and puzzle statistics for every requested variant."""
     considered_variants = set(base_variants or [])
 
-    with sqlite3.connect(USER_DB_PATH) as conn:
-        cursor = conn.cursor()
-        _ensure_tables(cursor)
+    with engine.begin() as conn:
+        _ensure_tables(conn)
 
         for variant in considered_variants:
-            cursor.execute(
-                """
-                INSERT OR IGNORE INTO user_variant_ratings (user_id, blind_moves, rating)
-                VALUES (?, ?, ?)
-                """,
-                (user_id, variant, DEFAULT_START_RATING),
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO user_variant_ratings (user_id, blind_moves, rating)
+                    VALUES (:user_id, :blind_moves, :rating)
+                    ON CONFLICT (user_id, blind_moves) DO NOTHING
+                    """
+                ),
+                {"user_id": user_id, "blind_moves": variant, "rating": DEFAULT_START_RATING},
             )
 
-        cursor.execute(
-            "SELECT blind_moves, rating FROM user_variant_ratings WHERE user_id = ?",
-            (user_id,),
-        )
-        rating_rows = cursor.fetchall()
+        rating_rows = conn.execute(
+            text("SELECT blind_moves, rating FROM user_variant_ratings WHERE user_id = :user_id"),
+            {"user_id": user_id},
+        ).fetchall()
         rating_map = {int(blind_moves): rating for blind_moves, rating in rating_rows}
         considered_variants.update(rating_map.keys())
 
-        cursor.execute(
-            """
-            SELECT COALESCE(BlindMoves, 0) AS BlindMoves,
-                   COUNT(DISTINCT PuzzleId) AS solved_unique,
-                   COUNT(*) AS total_attempts
-            FROM user_puzzles
-            GROUP BY COALESCE(BlindMoves, 0)
-            """
-        )
-        solved_rows = cursor.fetchall()
+        solved_rows = conn.execute(
+            text(
+                """
+                SELECT COALESCE(BlindMoves, 0) AS BlindMoves,
+                       COUNT(DISTINCT PuzzleId) AS solved_unique,
+                       COUNT(*) AS total_attempts
+                FROM user_puzzles
+                GROUP BY COALESCE(BlindMoves, 0)
+                """
+            )
+        ).fetchall()
         solved_map: Dict[int, Tuple[int, int]] = {
             int(blind_moves): (int(unique_count), int(total_attempts))
             for blind_moves, unique_count, total_attempts in solved_rows
@@ -168,25 +180,21 @@ def get_variant_statistics(
 
 def get_user_attempts(limit: int | None = 500) -> List[Dict[str, object]]:
     """Pobiera historię prób użytkownika w formie listy słowników."""
-
-    with sqlite3.connect(USER_DB_PATH) as conn:
-        cursor = conn.cursor()
-        _ensure_tables(cursor)
-        query = (
+    with engine.begin() as conn:
+        _ensure_tables(conn)
+        base_query = (
             """
-            SELECT PuzzleId, SolveDate, SolveTime, Result, COALESCE(BlindMoves, 0),
+            SELECT PuzzleId, SolveDate, SolveTime, Result, COALESCE(BlindMoves, 0) AS BlindMoves,
                    OldUserRating, NewUserRating, ChangeOfRating
             FROM user_puzzles
-            ORDER BY datetime(COALESCE(SolveDate, '1970-01-01 00:00:00')) DESC, id DESC
+            ORDER BY COALESCE(NULLIF(SolveDate, '')::timestamp, '1970-01-01 00:00:00'::timestamp) DESC, id DESC
             """
         )
         if limit is not None:
-            query += "\n            LIMIT ?"
-            cursor.execute(query, (limit,))
+            base_query += "\n            LIMIT :limit"
+            rows = conn.execute(text(base_query), {"limit": limit}).fetchall()
         else:
-            cursor.execute(query)
-
-        rows = cursor.fetchall()
+            rows = conn.execute(text(base_query)).fetchall()
 
     attempts: List[Dict[str, object]] = []
     for row in rows:

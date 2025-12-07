@@ -1,5 +1,4 @@
 import os
-import sqlite3
 from flask import Flask
 
 # Twój import do rating_diff (zostaje)

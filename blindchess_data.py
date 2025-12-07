@@ -1,46 +1,51 @@
-import sqlite3
+"""Seed the `puzzles` table from the Lichess CSV using PostgreSQL."""
+
+from __future__ import annotations
+
+import os
 import pandas as pd
+from sqlalchemy import text
 
-# 1. Łączymy się (lub tworzymy) bazę SQLite
-conn = sqlite3.connect("Lichess_Puzzle.db")
-cursor = conn.cursor()
+from utils.db import engine
 
-# 2. Usunięcie tabeli, jeśli istnieje (opcjonalne, jeśli chcesz mieć "świeżą" tabelę)
-cursor.execute("DROP TABLE IF EXISTS puzzles;")
 
-# 3. Tworzymy tabelę z kolumnami odpowiadającymi CSV
-#    - PuzzleId jako PRIMARY KEY (zakładamy, że jest unikalny)
-cursor.execute("""
-    CREATE TABLE puzzles (
-        PuzzleId TEXT PRIMARY KEY,
-        FEN TEXT,
-        Moves TEXT,
-        Rating INTEGER,
-        RatingDeviation INTEGER,
-        Popularity INTEGER,
-        NbPlays INTEGER,
-        Themes TEXT,
-        GameUrl TEXT,
-        OpeningTags TEXT
-    );
-""")
-conn.commit()
+CSV_FILE = os.environ.get("PUZZLE_CSV", "lichess_db_puzzle.csv")
 
-# 4. Wczytanie pliku CSV w partiach i zapisywanie do SQL
-chunksize = 100_000  # można dostosować do ilości RAM i wydajności
-csv_file = "lichess_db_puzzle.csv"
 
-reader = pd.read_csv(csv_file, chunksize=chunksize)
+def main():
+    # 1. Drop and recreate the target table.
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS puzzles;"))
+        conn.execute(
+            text(
+                """
+                CREATE TABLE puzzles (
+                    PuzzleId TEXT PRIMARY KEY,
+                    FEN TEXT,
+                    Moves TEXT,
+                    Rating INTEGER,
+                    RatingDeviation INTEGER,
+                    Popularity INTEGER,
+                    NbPlays INTEGER,
+                    Themes TEXT,
+                    GameUrl TEXT,
+                    OpeningTags TEXT
+                );
+                """
+            )
+        )
 
-for i, chunk in enumerate(reader):
-    # if_exists='append' – dopisujemy do istniejącej już tabeli
-    chunk.to_sql("puzzles", conn, if_exists="append", index=False)
-    print(f"Przetworzono chunk nr {i+1}")
+    # 2. Load the CSV in chunks and append to the database.
+    chunksize = 100_000
+    reader = pd.read_csv(CSV_FILE, chunksize=chunksize)
 
-# 5. (Opcjonalnie) można dodatkowo założyć indeksy na inne kolumny
-#    np. jeśli często filtrowana jest kolumna Rating:
-# cursor.execute("CREATE INDEX IF NOT EXISTS idx_rating ON puzzles (Rating);")
-# conn.commit()
+    for i, chunk in enumerate(reader):
+        chunk.to_sql("puzzles", engine, if_exists="append", index=False)
+        print(f"Przetworzono chunk nr {i+1}")
 
-# 6. Zamknięcie połączenia
-conn.close()
+    print("Import puzzles zakończony.")
+
+
+if __name__ == "__main__":
+    main()
+

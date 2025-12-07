@@ -7,3 +7,5 @@ user_puzzles.xlsx
 user_puzzles_with_rating.xlsx
 node_modules/
 static/node_modules/
+__pycache__/
+*.pyc
