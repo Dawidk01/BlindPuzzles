@@ -1,9 +1,8 @@
-def update_user_rating(user_rank, puzzle_rank, blind_moves, won):
-    # Oblicz efektywny ranking zadania X
-    X = puzzle_rank + 2.5 * blind_moves ** 2 + 97.5 * blind_moves
-    X = round(X)
-    # Oblicz prawdopodobieństwa
-    P_user = 1/(1+10**((X-user_rank)/800)) 
+def update_user_rating(user_rank, puzzle_rank, won):
+    """Aktualizuj ranking użytkownika bez modyfikowania rankingu puzzla o liczbę ruchów."""
+    # Oblicz prawdopodobieństwo powodzenia na podstawie czystego rankingu lichess.
+    X = round(puzzle_rank)
+    P_user = 1/(1+10**((X-user_rank)/800))
 
 
     # Zapamiętaj starą wartość rankingu, by obliczyć zmianę
