@@ -35,10 +35,29 @@ CREATE TABLE users (
 );
 """)
 
-# Dodaj użytkownika z domyślnym rankingiem 100, jeżeli nie istnieje
+cursor.execute("DROP TABLE IF EXISTS user_variant_ratings;")
+
 cursor.execute("""
-INSERT OR IGNORE INTO users (id, rating) VALUES (1, 100);
+    CREATE TABLE user_variant_ratings (
+        user_id INTEGER NOT NULL,
+        blind_moves INTEGER NOT NULL,
+        rating INTEGER NOT NULL,
+        PRIMARY KEY (user_id, blind_moves)
+    );
 """)
+
+# Dodaj użytkownika z domyślnym rankingiem 500, jeżeli nie istnieje
+cursor.execute("""
+INSERT OR IGNORE INTO users (id, rating) VALUES (1, 500);
+""")
+
+cursor.executemany(
+    """
+    INSERT OR IGNORE INTO user_variant_ratings (user_id, blind_moves, rating)
+    VALUES (?, ?, ?)
+    """,
+    [(1, variant, 500) for variant in [0, 2, 5, 10, 20, 40]],
+)
 
 conn.commit()
 conn.close()

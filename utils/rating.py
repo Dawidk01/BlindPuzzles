@@ -1,6 +1,6 @@
-def update_user_rating(user_rank, puzzle_rank, blind_moves, won):
-    # Oblicz efektywny ranking zadania X
-    X = puzzle_rank + 100 * blind_moves
+def update_user_rating(user_rank, puzzle_rank, won):
+    """Aktualizuj ranking na podstawie czystego rankingu lichess puzzla."""
+    X = puzzle_rank
 
     # Oblicz różnicę R
     R = abs(user_rank - X) / 100 + 25
